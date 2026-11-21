@@ -18,6 +18,8 @@ const fs = require('fs');
 const URL = process.argv[2] || 'https://lechampdelaurore-boop.github.io/say-it/';
 const LIVE = !process.argv[2];
 const SIZES = [[320, 568], [360, 640], [375, 667], [390, 664], [390, 844], [412, 780], [430, 932]];
+// Écrans d'ordinateur portable bas et larges (fenêtre de navigateur avec ses barres)
+const ORDIS = [[1366, 600], [1280, 560], [1536, 700]];
 const expectedCache = (fs.readFileSync(__dirname + '/../sw.js', 'utf8').match(/say-it-v\d+/) || [])[0];
 const REGLAGES = JSON.stringify({ son: false, anim: false, lente: false, francais: true, voix: '' });
 
@@ -43,7 +45,8 @@ function voixSimulee() {
 }
 
 async function nouvellePage(browser, w, h, erreurs, o = {}) {
-  const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  const ordi = w > 900;
+  const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: ordi ? 1 : 2, isMobile: !ordi, hasTouch: !ordi });
   page.on('pageerror', e => erreurs.push(e.message));
   page.on('console', m => { if (m.type() === 'error') erreurs.push(m.text()); });
   page.on('dialog', d => { erreurs.push('fenêtre du navigateur : ' + d.message()); d.dismiss(); });
@@ -69,6 +72,13 @@ async function debord(page) {
     if (z && z.offsetParent) {
       const zb = z.getBoundingClientRect().bottom;
       z.querySelectorAll('.case, .img-btn, .choix, .etiq, .cadre').forEach(e => { d = Math.max(d, Math.round(e.getBoundingClientRect().bottom - zb - 1)); });
+      // Chaque dessin reste dans sa case (sinon il dépasse en bas, vu sur un ordinateur portable)
+      z.querySelectorAll('svg.dessin').forEach(sv => {
+        const c = sv.closest('.img-btn, .case .img, .cadre');
+        if (!c) return;
+        const a = sv.getBoundingClientRect(), b = c.getBoundingClientRect();
+        d = Math.max(d, Math.round(a.bottom - b.bottom - 1), Math.round(a.right - b.right - 1), Math.round(b.top - a.top - 1), Math.round(b.left - a.left - 1));
+      });
     }
     return d;
   });
@@ -95,11 +105,11 @@ function tousVus(boite) {
   const browser = await chromium.launch();
 
   // 1. Les 7 tailles : chaque sorte de carte tient sans défiler, avant et après la réponse
-  for (const [w, h] of SIZES) {
+  for (const [w, h] of SIZES.concat(ORDIS)) {
     const erreurs = [], page = await nouvellePage(browser, w, h, erreurs, { stockage: { 'marc.anglais.progres': tousVus(2), 'marc.anglais.journal': { jours: {}, tour: true, paquets: {}, jumeaux: {} } } });
     const pire = { d: 0, ou: '' };
     const mesure = async (ou) => { const d = await debord(page); if (d > pire.d) { pire.d = d; pire.ou = ou; } };
-    const cap = async (nom) => { if (w === 320 || w === 390 && h === 844) await page.screenshot({ path: `captures/${nom}-${w}x${h}.png` }); };
+    const cap = async (nom) => { if (w === 320 || w === 390 && h === 844 || w === 1366) await page.screenshot({ path: `captures/${nom}-${w}x${h}.png` }); };
     await page.screenshot({ path: `captures/accueil-${w}x${h}.png`, fullPage: true });
     // Les mots les plus longs de chaque sorte
     const cartes = [
@@ -308,6 +318,21 @@ function tousVus(boite) {
     await page.screenshot({ path: 'captures/fiche-clothes.png', fullPage: true });
     const pr0 = await jeu(page, () => __sayit.progres());
     note(recache === 0 && JSON.stringify(pr0) === JSON.stringify(await jeu(page, () => __sayit.progres())), '« Tout recacher » ; la fiche ne compte pas dans les révisions');
+    // Fiche Clothes : le dessin occupe l'essentiel de la case, la tache-cache reste une petite étiquette (téléphone et ordinateur portable)
+    const proportions = async (pg) => pg.evaluate(() => [...document.querySelectorAll('#vFiche .case.habit')].map(c => {
+      const k = c.getBoundingClientRect(), i = c.querySelector('.img').getBoundingClientRect(), r = c.querySelector('.rabat').getBoundingClientRect();
+      return { img: i.height / k.height, rab: r.height / i.height };
+    }));
+    const okProp = l => l.length === 13 && l.every(x => x.img >= .6 && x.rab <= .45);
+    const propTel = await proportions(page);
+    const ordi = await browser.newPage({ viewport: { width: 1366, height: 600 } });
+    await ordi.addInitScript(r => localStorage.setItem('marc.anglais.reglages', r), REGLAGES);
+    await ordi.goto(URL + '?nocache=' + Date.now()); await ordi.waitForFunction(() => window.__sayit);
+    await ordi.evaluate(() => __sayit.fiche('clothes'));
+    const propOrdi = await proportions(ordi);
+    await ordi.screenshot({ path: 'captures/fiche-clothes-1366x600.png', fullPage: true });
+    await ordi.close();
+    note(okProp(propTel) && okProp(propOrdi), 'Fiche Clothes : le dessin prend au moins 60 % de la case et la tache-cache reste petite, au téléphone et sur ordinateur portable');
     await page.click('#bRetour'); await page.click('#bParent');
     await page.screenshot({ path: 'captures/parents.png', fullPage: true });
     const txt = await page.evaluate(() => document.querySelector('#vParent').innerText);
