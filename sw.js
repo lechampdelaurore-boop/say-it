@@ -1,6 +1,6 @@
 // Garde l'appli disponible hors ligne.
 // Changer CACHE à chaque mise à jour des fichiers listés ci-dessous.
-var CACHE = 'say-it-v3';
+var CACHE = 'say-it-v4';
 var FILES = [
   './',
   './index.html',

@@ -159,6 +159,11 @@ function tousVus(boite) {
     note(e0.run && e0.run.mode === 'tour' && e0.run.n === 25 && e0.run.cartes.every(c => c.t === 'b'), 'Premier lancement : « Mon anglais du jour » ouvre le tour de la fiche (25 cartes « écoute et touche »)');
     note(!fuite.length, 'Pas de mot ni de français à l\'écran avant la réponse' + (fuite.length ? ' : ' + fuite.map(x => x[0]).join(', ') : ''));
     note(dit.includes(motCarte), `La voix dit la phrase de la carte (« ${motCarte} »)`);
+    // Bouton tortue : la phrase est redite nettement plus lentement
+    await page.evaluate(() => { window.__paroles.length = 0; });
+    await page.click('#vJeu [data-act="lent"]'); await page.waitForTimeout(300);
+    const lent = await page.evaluate(() => window.__paroles.filter(p => p.t.trim()));
+    note(lent.length && lent.every(p => p.rate <= .5), 'Tortue : la phrase est redite lentement (vitesse ' + lent.map(p => p.rate).join(', ') + ', 0,5 au plus ; normale 0,9)');
     // Il reconnaît 10 mots sur 25
     for (let k = 0; k < 25; k++) await jeu(page, k => k < 10 ? __sayit.juste() : __sayit.faux(), k);
     const e1 = await etat(page), pr = await jeu(page, () => __sayit.progres());
