@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "Say it!",
+  "short_name": "Say it!",
+  "description": "Les couleurs et les vêtements en anglais, comme sur la fiche de la classe : dire le mot, soulever la tache, écouter.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FFF4FA",
+  "theme_color": "#9AD7FF",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
