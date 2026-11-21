@@ -318,12 +318,12 @@ function tousVus(boite) {
     await page.screenshot({ path: 'captures/fiche-clothes.png', fullPage: true });
     const pr0 = await jeu(page, () => __sayit.progres());
     note(recache === 0 && JSON.stringify(pr0) === JSON.stringify(await jeu(page, () => __sayit.progres())), '« Tout recacher » ; la fiche ne compte pas dans les révisions');
-    // Fiche Clothes : le dessin occupe l'essentiel de la case, la tache-cache reste une petite étiquette (téléphone et ordinateur portable)
+    // Fiche Clothes : le dessin est carré et prend presque toute la largeur de la case (la traduction française peut tenir sur 2 lignes), la tache-cache reste une petite étiquette (téléphone et ordinateur portable)
     const proportions = async (pg) => pg.evaluate(() => [...document.querySelectorAll('#vFiche .case.habit')].map(c => {
       const k = c.getBoundingClientRect(), i = c.querySelector('.img').getBoundingClientRect(), r = c.querySelector('.rabat').getBoundingClientRect();
-      return { img: i.height / k.height, rab: r.height / i.height };
+      return { img: Math.min(i.width, i.height) / k.width, rab: r.height / i.height };
     }));
-    const okProp = l => l.length === 13 && l.every(x => x.img >= .6 && x.rab <= .45);
+    const okProp = l => l.length === 13 && l.every(x => x.img >= .85 && x.rab <= .45);
     const propTel = await proportions(page);
     const ordi = await browser.newPage({ viewport: { width: 1366, height: 600 } });
     await ordi.addInitScript(r => localStorage.setItem('marc.anglais.reglages', r), REGLAGES);
@@ -332,7 +332,8 @@ function tousVus(boite) {
     const propOrdi = await proportions(ordi);
     await ordi.screenshot({ path: 'captures/fiche-clothes-1366x600.png', fullPage: true });
     await ordi.close();
-    note(okProp(propTel) && okProp(propOrdi), 'Fiche Clothes : le dessin prend au moins 60 % de la case et la tache-cache reste petite, au téléphone et sur ordinateur portable');
+    const fmt = l => l.length + ' cases, dessin min ' + Math.round(Math.min(...l.map(x => x.img)) * 100) + ' %, cache max ' + Math.round(Math.max(...l.map(x => x.rab)) * 100) + ' %';
+    note(okProp(propTel) && okProp(propOrdi), 'Fiche Clothes : le dessin prend au moins 85 % de la largeur de la case et la tache-cache reste petite, au téléphone et sur ordinateur portable (téléphone : ' + fmt(propTel) + ' ; ordinateur : ' + fmt(propOrdi) + ')');
     await page.click('#bRetour'); await page.click('#bParent');
     await page.screenshot({ path: 'captures/parents.png', fullPage: true });
     const txt = await page.evaluate(() => document.querySelector('#vParent').innerText);
