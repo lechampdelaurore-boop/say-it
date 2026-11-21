@@ -1657,7 +1657,7 @@ select.voix { width: 100%; min-height: 48px; border: var(--bord) solid var(--lin
     try { SYNTH.addEventListener('voiceschanged', function () { choisirVoix(); if (VUE === 'vAccueil') avisVoix(); }); } catch (e) { SYNTH.onvoiceschanged = choisirVoix; }
   }
   function taire() { PAROLE++; if (SYNTH) try { SYNTH.cancel(); } catch (e) { /* rien */ } }
-  // Dit les textes l'un après l'autre (vitesse normale 0,9 ; lente 0,7).
+  // Dit les textes l'un après l'autre (vitesse normale 0,9 ; tortue 0,5 avec une vraie pause entre les phrases).
   function dire(textes, lent) {
     DERNIER = textes;
     DITS.push({ t: textes.join(' | '), lent: !!(lent || R.lente) });
@@ -1669,8 +1669,9 @@ select.voix { width: 100%; min-height: 48px; border: var(--bord) solid var(--lin
       if (jeton !== PAROLE || i >= textes.length) return;
       try {
         var u = new SpeechSynthesisUtterance(String(textes[i++]));
-        u.lang = VOIX.lang; u.voice = VOIX; u.rate = lent || R.lente ? .7 : .9;
-        u.onend = function () { setTimeout(suivant, 250); };
+        u.lang = VOIX.lang; u.voice = VOIX; var lentement = !!(lent || R.lente);
+        u.rate = lentement ? .5 : .9;
+        u.onend = function () { setTimeout(suivant, lentement ? 700 : 250); };
         SYNTH.speak(u);
       } catch (e) { /* pas de voix */ }
     })();
