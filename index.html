@@ -354,10 +354,10 @@ svg.dessin { display: block; width: 100%; height: 100%; overflow: visible; }
 .case.couleur .rabat { inset: 8%; }
 .case.couleur .mot { position: absolute; inset: 0; display: grid; place-content: center; padding: 4px; font-size: 1.15rem; }
 .case.couleur.leve .rabat { transform: rotate(20deg) scale(.34); }
-/* Clothes : le dessin, et le mot sous une tache claire posée dessus comme un rabat */
+/* Clothes : le dessin, et le mot sous une tache claire posée dessus comme un rabat (hauteur fixe : elle ne grandit pas avec la traduction) */
 .case .bande { position: relative; display: grid; }
 .case.habit .rabat {
-  left: 6%; right: 8%; top: -2px; bottom: 6px; background: #EDE7FA; border: var(--bord) solid #2B2340;
+  left: 6%; right: 8%; top: -2px; height: 2.3rem; background: #EDE7FA; border: var(--bord) solid #2B2340;
   border-radius: 48% 52% 44% 56% / 62% 46% 54% 38%; box-shadow: inset -5px -4px 0 #D6CCF2; transition: transform .5s var(--ressort), opacity .45s ease;
 }
 .case.habit .rabat::after { content: ''; position: absolute; right: -11px; top: -7px; width: 9px; height: 9px; border-radius: 50%; background: #EDE7FA; border: 2.5px solid #2B2340; }
